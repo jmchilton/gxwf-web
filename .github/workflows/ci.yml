@@ -9,6 +9,9 @@ on:
       galaxy_ref:
         description: "Galaxy branch/ref to build subpackages from"
         default: wf_tool_state
+      gxformat2_ref:
+        description: "gxformat2 branch/ref to build from"
+        default: abstraction_applications
 
 jobs:
   test:
@@ -27,13 +30,21 @@ jobs:
             packages/tool_util_models
             packages/tool_util
 
+      - name: Checkout gxformat2 branch
+        uses: actions/checkout@v4
+        with:
+          repository: galaxyproject/gxformat2
+          ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
+          path: _gxformat2
+
       - uses: astral-sh/setup-uv@v4
 
-      - name: Build Galaxy wheels
+      - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
             uv build _galaxy/packages/$pkg --out-dir wheels
           done
+          uv build _gxformat2 --out-dir wheels
 
       - name: Install project
         run: |

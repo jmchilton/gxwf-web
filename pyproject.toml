@@ -12,6 +12,8 @@ dependencies = [
     "httpx>=0.27",
     "pydantic>=2.0",
     "gitpython>=3.1",
+    "gxformat2>=0.24.0",
+    "jsonschema>=4.26.0",
 ]
 
 [project.optional-dependencies]
@@ -33,3 +35,4 @@ packages = ["src/galaxy_workflow_dev_webapp"]
 galaxy-tool-util = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/tool_util", editable = true }
 galaxy-tool-util-models = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/tool_util_models", editable = true }
 galaxy-util = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/util", editable = true }
+gxformat2 = { path = "/Users/jxc755/projects/worktrees/gxformat2/branch/abstraction_applications", editable = true }
