@@ -64,13 +64,6 @@ def _get_workflow(project: Project, workflow_path: str):
     return wf
 
 
-def _ensure_tool_info(req: OperationRequest):
-    if req.populate_cache:
-        from galaxy.tool_util.workflow_state.cache import populate_cache
-        populate_cache(_tool_info, _get_project.__name__, source=req.tool_source)
-    return _tool_info
-
-
 @app.post("/projects", response_model=WorkflowIndex)
 async def register_project(config: ProjectConfig):
     """Register a GitHub project and index its workflows."""
@@ -141,7 +134,10 @@ async def export_format2(
     """Export a native workflow to format2 with schema-aware state."""
     project = _get_project(owner, repo)
     wf = _get_workflow(project, workflow_path)
-    return run_export_format2(wf, _tool_info)
+    result = run_export_format2(wf, _tool_info)
+    if result is None:
+        raise HTTPException(422, "Workflow skipped (legacy encoding)")
+    return result.report
 
 
 @app.post("/projects/{owner}/{repo}/workflows/{workflow_path:path}/roundtrip")
