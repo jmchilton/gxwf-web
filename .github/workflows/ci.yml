@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      galaxy_ref:
+        description: "Galaxy branch/ref to build subpackages from"
+        default: wf_tool_state
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Galaxy branch
+        uses: actions/checkout@v4
+        with:
+          repository: jmchilton/galaxy
+          ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
+          path: _galaxy
+          sparse-checkout: |
+            packages/util
+            packages/tool_util_models
+            packages/tool_util
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Build Galaxy wheels
+        run: |
+          for pkg in util tool_util_models tool_util; do
+            uv build _galaxy/packages/$pkg --out-dir wheels
+          done
+
+      - name: Install project
+        run: |
+          uv sync --no-sources --find-links wheels --extra dev
+
+      - name: Lint
+        run: uv run ruff check src/ tests/
+
+      - name: Test
+        run: uv run pytest tests/ -v

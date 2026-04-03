@@ -1,0 +1,35 @@
+[project]
+name = "galaxy-workflow-development-webapp"
+version = "0.1.0"
+description = "FastAPI service for Galaxy workflow validation, linting, cleaning, and format conversion"
+requires-python = ">=3.10"
+dependencies = [
+    "galaxy-tool-util==25.1.dev0",
+    "galaxy-tool-util-models==25.1.dev0",
+    "galaxy-util==25.1.dev0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "pydantic>=2.0",
+    "gitpython>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/galaxy_workflow_dev_webapp"]
+
+[tool.uv.sources]
+galaxy-tool-util = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/tool_util", editable = true }
+galaxy-tool-util-models = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/tool_util_models", editable = true }
+galaxy-util = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/util", editable = true }
