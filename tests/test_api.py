@@ -3,23 +3,27 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from galaxy_workflow_dev_webapp.app import app
+from galaxy_workflow_dev_webapp import app as app_module
 
 
 @pytest.fixture
-def client():
-    with TestClient(app) as c:
+def client(tmp_path):
+    app_module.configure(str(tmp_path))
+    app_module._tool_info = None
+    app_module._workflows = []
+    with TestClient(app_module.app) as c:
         yield c
 
 
-def test_register_project_not_found(client):
-    """Registering a non-existent project should fail gracefully."""
-    resp = client.get("/projects/nonexistent/norepo")
-    assert resp.status_code == 404
+def test_list_workflows_empty(client):
+    resp = client.get("/workflows")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["workflows"] == []
 
 
-def test_validate_no_project(client):
-    resp = client.post("/projects/nonexistent/norepo/workflows/test.ga/validate")
+def test_validate_not_found(client):
+    resp = client.post("/workflows/nonexistent.ga/validate")
     assert resp.status_code == 404
 
 
@@ -29,9 +33,9 @@ def test_openapi_schema(client):
     schema = resp.json()
     assert "Galaxy Workflow Development API" in schema["info"]["title"]
     paths = schema["paths"]
-    assert "/projects" in paths
-    assert "/projects/{owner}/{repo}/workflows/{workflow_path}/validate" in paths
-    assert "/projects/{owner}/{repo}/workflows/{workflow_path}/clean" in paths
-    assert "/projects/{owner}/{repo}/workflows/{workflow_path}/lint" in paths
-    assert "/projects/{owner}/{repo}/workflows/{workflow_path}/roundtrip" in paths
-    assert "/projects/{owner}/{repo}/workflows/{workflow_path}/export-format2" in paths
+    assert "/workflows" in paths
+    assert "/workflows/{workflow_path}/validate" in paths
+    assert "/workflows/{workflow_path}/clean" in paths
+    assert "/workflows/{workflow_path}/lint" in paths
+    assert "/workflows/{workflow_path}/roundtrip" in paths
+    assert "/workflows/{workflow_path}/export-format2" in paths

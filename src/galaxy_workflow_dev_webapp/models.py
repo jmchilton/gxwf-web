@@ -1,24 +1,12 @@
 """Request/response models for the webapp API."""
 
-from typing import (
-    List,
-    Optional,
-)
+from typing import List
 
 from pydantic import BaseModel
 
 
-class ProjectConfig(BaseModel):
-    """Configuration for a GitHub project to index."""
-
-    owner: str
-    repo: str
-    ref: str = "main"
-    local_path: Optional[str] = None
-
-
 class WorkflowEntry(BaseModel):
-    """A discovered workflow file in the project."""
+    """A discovered workflow file."""
 
     relative_path: str
     format: str
@@ -26,18 +14,16 @@ class WorkflowEntry(BaseModel):
 
 
 class WorkflowIndex(BaseModel):
-    """Index of all workflows in a project."""
+    """Index of all workflows in the target directory."""
 
-    project: str
-    ref: str
+    directory: str
     workflows: List[WorkflowEntry]
 
 
 class OperationRequest(BaseModel):
-    """Request to run an operation on a workflow identified by relative path."""
+    """Base request for workflow operations."""
 
-    populate_cache: bool = True
-    tool_source: str = "shed"
+    pass
 
 
 class CleanRequest(OperationRequest):

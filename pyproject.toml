@@ -1,7 +1,34 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "galaxy-workflow-development-webapp"
-version = "0.1.0"
+dynamic = ["version"]
 description = "FastAPI service for Galaxy workflow validation, linting, cleaning, and format conversion"
+readme = "README.rst"
+authors = [
+    {name = "Galaxy Project and Community", email = "jmchilton@gmail.com"},
+]
+license = "MIT"
+license-files = [
+    "LICENSE",
+]
+keywords = ["galaxy", "workflows"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Testing",
+]
 requires-python = ">=3.10"
 dependencies = [
     "galaxy-tool-util==25.1.dev0",
@@ -11,25 +38,60 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "httpx>=0.27",
     "pydantic>=2.0",
-    "gitpython>=3.1",
     "gxformat2>=0.24.0",
     "jsonschema>=4.26.0",
 ]
 
-[project.optional-dependencies]
-dev = [
+[project.scripts]
+galaxy-workflow-dev = "galaxy_workflow_dev_webapp.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/jmchilton/galaxy-workflow-development-webapp"
+
+[dependency-groups]
+lint = [
+    "ruff",
+    "black",
+    "isort",
+]
+mypy = [
+    "mypy",
+    "types-PyYAML",
+    "types-requests",
+]
+test = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "httpx>=0.27",
-    "ruff>=0.6",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst-parser",
+    "sphinx-argparse",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.setuptools.dynamic]
+version = {attr = "galaxy_workflow_dev_webapp.__version__"}
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/galaxy_workflow_dev_webapp"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["galaxy_workflow_dev_webapp*"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = ["galaxy_workflow_dev_webapp"]
+force_alphabetical_sort_within_sections = true
+
+[tool.black]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.uv.sources]
 galaxy-tool-util = { path = "/Users/jxc755/projects/worktrees/galaxy/branch/wf_tool_state/packages/tool_util", editable = true }

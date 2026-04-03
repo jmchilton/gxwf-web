@@ -13,8 +13,69 @@ on:
         description: "gxformat2 branch/ref to build from"
         default: abstraction_applications
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Galaxy branch
+        uses: actions/checkout@v4
+        with:
+          repository: jmchilton/galaxy
+          ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
+          path: _galaxy
+          sparse-checkout: |
+            packages/util
+            packages/tool_util_models
+            packages/tool_util
+
+      - name: Checkout gxformat2 branch
+        uses: actions/checkout@v4
+        with:
+          repository: galaxyproject/gxformat2
+          ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
+          path: _gxformat2
+
+      - uses: astral-sh/setup-uv@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build dependency wheels
+        run: |
+          for pkg in util tool_util_models tool_util; do
+            uv build _galaxy/packages/$pkg --out-dir wheels
+          done
+          uv build _gxformat2 --out-dir wheels
+
+      - name: Install project
+        run: |
+          uv sync --no-sources --find-links wheels --group test --group lint --group mypy
+
+      - name: Lint
+        if: matrix.python-version == '3.13'
+        run: |
+          uv run --group lint isort --check --diff .
+          uv run --group lint ruff check
+          uv run --group lint black --check --diff .
+
+      - name: Type check
+        if: matrix.python-version == '3.13'
+        run: uv run --group mypy mypy src/galaxy_workflow_dev_webapp
+
+      - name: Test
+        run: uv run --group test pytest tests/ -v
+
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +100,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
@@ -47,11 +112,15 @@ jobs:
           uv build _gxformat2 --out-dir wheels
 
       - name: Install project
+        run: uv sync --no-sources --find-links wheels --group docs
+
+      - name: Build docs
         run: |
-          uv sync --no-sources --find-links wheels --extra dev
+          uv run sphinx-apidoc -f -o docs/ src/galaxy_workflow_dev_webapp
+          uv run sphinx-build -b html docs/ docs/_build/html
 
-      - name: Lint
-        run: uv run ruff check src/ tests/
-
-      - name: Test
-        run: uv run pytest tests/ -v
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.repository == 'jmchilton/galaxy-workflow-development-webapp'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs/_build/html
