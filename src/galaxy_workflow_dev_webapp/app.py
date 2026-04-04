@@ -27,9 +27,10 @@ from .models import (
 from .operations import (
     get_tool_info,
     run_clean,
-    run_export_format2,
     run_lint,
     run_roundtrip,
+    run_to_format2,
+    run_to_native,
     run_validate,
 )
 
@@ -131,16 +132,25 @@ async def clean_workflow(
     )
 
 
-@app.post("/workflows/{workflow_path:path}/export-format2")
-async def export_format2(
+@app.post("/workflows/{workflow_path:path}/to-format2")
+async def to_format2(
     workflow_path: str,
 ) -> Any:
-    """Export a native workflow to format2 with schema-aware state."""
+    """Convert a native workflow to format2 with schema-aware state."""
     wf = _get_workflow(workflow_path)
-    result = run_export_format2(wf, _tool_info)
+    result = run_to_format2(wf, _tool_info)
     if result is None:
         raise HTTPException(422, "Workflow skipped (legacy encoding)")
     return result.report
+
+
+@app.post("/workflows/{workflow_path:path}/to-native")
+async def to_native(
+    workflow_path: str,
+) -> Any:
+    """Convert a format2 workflow to native Galaxy format with schema-aware state."""
+    wf = _get_workflow(workflow_path)
+    return run_to_native(wf, _tool_info)
 
 
 @app.post("/workflows/{workflow_path:path}/roundtrip")

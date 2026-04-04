@@ -38,4 +38,5 @@ def test_openapi_schema(client):
     assert "/workflows/{workflow_path}/clean" in paths
     assert "/workflows/{workflow_path}/lint" in paths
     assert "/workflows/{workflow_path}/roundtrip" in paths
-    assert "/workflows/{workflow_path}/export-format2" in paths
+    assert "/workflows/{workflow_path}/to-format2" in paths
+    assert "/workflows/{workflow_path}/to-native" in paths

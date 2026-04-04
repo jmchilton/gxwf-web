@@ -21,6 +21,10 @@ from galaxy.tool_util.workflow_state.cache import build_tool_info
 from galaxy.tool_util.workflow_state.export_format2 import ExportSingleResult
 from galaxy.tool_util.workflow_state.roundtrip import SingleRoundTripReport
 from galaxy.tool_util.workflow_state.stale_keys import StaleKeyPolicy
+from galaxy.tool_util.workflow_state.to_native_stateful import (
+    convert_to_native_stateful,
+    ToNativeResult,
+)
 from galaxy.tool_util.workflow_state.toolshed_tool_info import ToolShedGetToolInfo
 from galaxy.tool_util.workflow_state.workflow_tree import WorkflowInfo
 
@@ -39,8 +43,12 @@ def run_clean(info: WorkflowInfo, tool_info, **kwargs) -> SingleCleanReport:
     return clean_single(info.path, tool_info, policy=policy)
 
 
-def run_export_format2(info: WorkflowInfo, tool_info) -> Optional[ExportSingleResult]:
+def run_to_format2(info: WorkflowInfo, tool_info) -> Optional[ExportSingleResult]:
     return export_single(info.path, tool_info)
+
+
+def run_to_native(info: WorkflowInfo, tool_info) -> ToNativeResult:
+    return convert_to_native_stateful(info.path, tool_info)
 
 
 def run_roundtrip(info: WorkflowInfo, tool_info) -> SingleRoundTripReport:
