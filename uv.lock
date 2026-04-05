@@ -587,6 +587,7 @@ docs = [
     { name = "sphinx" },
     { name = "sphinx-argparse" },
     { name = "sphinx-rtd-theme" },
+    { name = "sphinxcontrib-mermaid" },
 ]
 lint = [
     { name = "black" },

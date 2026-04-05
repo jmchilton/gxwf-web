@@ -23,7 +23,7 @@ def test_list_workflows_empty(client):
 
 
 def test_validate_not_found(client):
-    resp = client.post("/workflows/nonexistent.ga/validate")
+    resp = client.get("/workflows/nonexistent.ga/validate")
     assert resp.status_code == 404
 
 

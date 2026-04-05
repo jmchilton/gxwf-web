@@ -1,6 +1,12 @@
 """Request/response models for the webapp API."""
 
-from typing import List
+from datetime import datetime
+from typing import (
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -20,26 +26,25 @@ class WorkflowIndex(BaseModel):
     workflows: List[WorkflowEntry]
 
 
-class OperationRequest(BaseModel):
-    """Base request for workflow operations."""
+class ContentsModel(BaseModel):
+    """Jupyter Contents API-shaped model for files and directories."""
 
-    pass
-
-
-class CleanRequest(OperationRequest):
-    preserve: List[str] = []
-    strip: List[str] = []
-
-
-class ValidateRequest(OperationRequest):
-    strict: bool = False
-    connections: bool = False
-    mode: str = "pydantic"
-    allow: List[str] = []
-    deny: List[str] = []
+    name: str
+    path: str
+    type: Literal["file", "directory"]
+    writable: bool
+    created: datetime
+    last_modified: datetime
+    size: Optional[int] = None
+    mimetype: Optional[str] = None
+    format: Optional[Literal["text", "base64"]] = None
+    content: Optional[Union[str, List["ContentsModel"]]] = None
 
 
-class LintRequest(OperationRequest):
-    strict: bool = False
-    allow: List[str] = []
-    deny: List[str] = []
+ContentsModel.model_rebuild()
+
+
+class RenameRequest(BaseModel):
+    """Body for PATCH /api/contents/{path} — rename/move."""
+
+    path: str

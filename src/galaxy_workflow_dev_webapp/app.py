@@ -11,16 +11,23 @@ from typing import (
 from fastapi import (
     FastAPI,
     HTTPException,
+    Query,
 )
 from galaxy.tool_util.workflow_state.workflow_tree import (
     discover_workflows,
     WorkflowInfo,
 )
 
+from .contents import (
+    delete_contents,
+    is_workflow_file,
+    read_contents,
+    rename_contents,
+    write_contents,
+)
 from .models import (
-    CleanRequest,
-    LintRequest,
-    ValidateRequest,
+    ContentsModel,
+    RenameRequest,
     WorkflowEntry,
     WorkflowIndex,
 )
@@ -99,40 +106,45 @@ async def refresh_workflows():
     return await list_workflows()
 
 
-@app.post("/workflows/{workflow_path:path}/validate")
+@app.get("/workflows/{workflow_path:path}/validate")
 async def validate_workflow(
     workflow_path: str,
-    body: ValidateRequest = ValidateRequest(),
+    strict: bool = False,
+    connections: bool = False,
+    mode: str = "pydantic",
+    allow: List[str] = Query(default=[]),
+    deny: List[str] = Query(default=[]),
 ) -> Any:
     """Validate a workflow's tool state against tool definitions."""
     wf = _get_workflow(workflow_path)
     return run_validate(
         wf,
         _tool_info,
-        strict=body.strict,
-        connections=body.connections,
-        mode=body.mode,
-        allow=body.allow,
-        deny=body.deny,
+        strict=strict,
+        connections=connections,
+        mode=mode,
+        allow=allow,
+        deny=deny,
     )
 
 
-@app.post("/workflows/{workflow_path:path}/clean")
+@app.get("/workflows/{workflow_path:path}/clean")
 async def clean_workflow(
     workflow_path: str,
-    body: CleanRequest = CleanRequest(),
+    preserve: List[str] = Query(default=[]),
+    strip: List[str] = Query(default=[]),
 ) -> Any:
-    """Clean stale tool state keys from a workflow."""
+    """Report stale tool state keys in a workflow."""
     wf = _get_workflow(workflow_path)
     return run_clean(
         wf,
         _tool_info,
-        preserve=body.preserve,
-        strip=body.strip,
+        preserve=preserve,
+        strip=strip,
     )
 
 
-@app.post("/workflows/{workflow_path:path}/to-format2")
+@app.get("/workflows/{workflow_path:path}/to-format2")
 async def to_format2(
     workflow_path: str,
 ) -> Any:
@@ -144,7 +156,7 @@ async def to_format2(
     return result.report
 
 
-@app.post("/workflows/{workflow_path:path}/to-native")
+@app.get("/workflows/{workflow_path:path}/to-native")
 async def to_native(
     workflow_path: str,
 ) -> Any:
@@ -153,7 +165,7 @@ async def to_native(
     return run_to_native(wf, _tool_info)
 
 
-@app.post("/workflows/{workflow_path:path}/roundtrip")
+@app.get("/workflows/{workflow_path:path}/roundtrip")
 async def roundtrip_workflow(
     workflow_path: str,
 ) -> Any:
@@ -162,17 +174,67 @@ async def roundtrip_workflow(
     return run_roundtrip(wf, _tool_info)
 
 
-@app.post("/workflows/{workflow_path:path}/lint")
+def _maybe_refresh_workflows(rel_path: str) -> None:
+    """Refresh workflow cache when a workflow-shaped file was mutated."""
+    global _workflows
+    if _directory is not None and is_workflow_file(rel_path):
+        _workflows = discover_workflows(_directory)
+
+
+@app.get("/api/contents", response_model=ContentsModel)
+async def read_root_contents(content: int = 1) -> ContentsModel:
+    """Read configured directory root (Jupyter Contents API)."""
+    assert _directory is not None
+    return read_contents(_directory, "", include_content=bool(content))
+
+
+@app.get("/api/contents/{path:path}", response_model=ContentsModel)
+async def read_path_contents(path: str, content: int = 1) -> ContentsModel:
+    """Read a file or directory by relative path."""
+    assert _directory is not None
+    return read_contents(_directory, path, include_content=bool(content))
+
+
+@app.put("/api/contents/{path:path}", response_model=ContentsModel)
+async def write_path_contents(path: str, model: ContentsModel) -> ContentsModel:
+    """Save (create-or-replace) a file or create a directory."""
+    assert _directory is not None
+    result = write_contents(_directory, path, model)
+    _maybe_refresh_workflows(path)
+    return result
+
+
+@app.delete("/api/contents/{path:path}", status_code=204)
+async def delete_path_contents(path: str) -> None:
+    """Delete a file or directory (recursive)."""
+    assert _directory is not None
+    delete_contents(_directory, path)
+    _maybe_refresh_workflows(path)
+
+
+@app.patch("/api/contents/{path:path}", response_model=ContentsModel)
+async def rename_path_contents(path: str, body: RenameRequest) -> ContentsModel:
+    """Rename/move a file or directory."""
+    assert _directory is not None
+    result = rename_contents(_directory, path, body.path)
+    _maybe_refresh_workflows(path)
+    _maybe_refresh_workflows(body.path)
+    return result
+
+
+@app.get("/workflows/{workflow_path:path}/lint")
 async def lint_workflow(
     workflow_path: str,
-    body: LintRequest = LintRequest(),
+    strict: bool = False,
+    allow: List[str] = Query(default=[]),
+    deny: List[str] = Query(default=[]),
 ) -> Any:
     """Lint a workflow (structural + tool state validation)."""
     wf = _get_workflow(workflow_path)
     return run_lint(
         wf,
         _tool_info,
-        strict=body.strict,
-        allow=body.allow,
-        deny=body.deny,
+        strict=strict,
+        allow=allow,
+        deny=deny,
     )
