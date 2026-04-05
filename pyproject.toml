@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "galaxy-workflow-development-webapp"
 dynamic = ["version"]
 description = "FastAPI service for Galaxy workflow validation, linting, cleaning, and format conversion"
-readme = "README.rst"
+readme = "README.md"
 authors = [
     {name = "Galaxy Project and Community", email = "jmchilton@gmail.com"},
 ]
@@ -66,9 +66,12 @@ test = [
 ]
 docs = [
     "sphinx",
-    "sphinx-rtd-theme",
+    "pydata-sphinx-theme",
     "myst-parser",
     "sphinx-argparse",
+    "sphinx-design",
+    "sphinxcontrib-mermaid",
+    "sphinxcontrib-openapi",
 ]
 
 [tool.setuptools.dynamic]

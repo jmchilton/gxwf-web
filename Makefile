@@ -65,14 +65,17 @@ coverage: ## check code coverage
 	uv run --group test coverage html
 	open htmlcov/index.html || xdg-open htmlcov/index.html
 
-ready-docs:
-	rm -f $(DOCS_DIR)/galaxy_workflow_dev_webapp.rst
-	rm -f $(DOCS_DIR)/modules.rst
-	$(IN_VENV) sphinx-apidoc -f -o $(DOCS_DIR)/ $(SOURCE_DIR)
+docs-openapi: ## regenerate committed OpenAPI schema dump
+	uv run --group docs galaxy-workflow-dev --output-schema $(DOCS_DIR)/_static/openapi.json
 
-docs: ready-docs ## generate Sphinx HTML documentation
-	$(IN_VENV) $(MAKE) -C $(DOCS_DIR) clean
-	$(IN_VENV) $(MAKE) -C $(DOCS_DIR) html
+docs-clean: ## remove built docs
+	rm -rf $(DOCS_DIR)/_build
+
+docs: docs-openapi ## generate Sphinx HTML documentation (warnings as errors)
+	uv run --group docs sphinx-build -W -b html $(DOCS_DIR) $(DOCS_DIR)/_build/html
+
+docs-serve: docs ## serve built docs on http://127.0.0.1:8001
+	cd $(DOCS_DIR)/_build/html && python3 -m http.server 8001
 
 open-docs: docs ## generate Sphinx HTML documentation and open in browser
 	open $(DOCS_DIR)/_build/html/index.html || xdg-open $(DOCS_DIR)/_build/html/index.html

@@ -1,4 +1,7 @@
 myst-parser
+pydata-sphinx-theme
 sphinx
 sphinx-argparse
-sphinx-rtd-theme
+sphinx-design
+sphinxcontrib-mermaid
+sphinxcontrib-openapi
