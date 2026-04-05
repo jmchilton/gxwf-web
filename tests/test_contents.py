@@ -281,6 +281,297 @@ def test_auto_refresh_on_workflow_delete(client, tmp_path):
     assert "wf.ga" not in paths
 
 
+def test_post_untitled_file(client, tmp_path):
+    resp = client.post("/api/contents", json={"type": "file"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["name"] == "untitled"
+    assert data["type"] == "file"
+    assert (tmp_path / "untitled").exists()
+
+
+def test_post_untitled_file_with_ext(client, tmp_path):
+    resp = client.post("/api/contents", json={"type": "file", "ext": ".ga"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "untitled.ga"
+    assert (tmp_path / "untitled.ga").exists()
+
+
+def test_post_untitled_file_with_ext_no_dot(client, tmp_path):
+    resp = client.post("/api/contents", json={"type": "file", "ext": "txt"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "untitled.txt"
+
+
+def test_post_untitled_file_collision_suffix(client, tmp_path):
+    (tmp_path / "untitled.ga").write_text("existing")
+    resp = client.post("/api/contents", json={"type": "file", "ext": ".ga"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "untitled1.ga"
+    (tmp_path / "untitled1.ga").write_text("also existing")
+    resp = client.post("/api/contents", json={"type": "file", "ext": ".ga"})
+    assert resp.json()["name"] == "untitled2.ga"
+
+
+def test_post_untitled_directory(client, tmp_path):
+    resp = client.post("/api/contents", json={"type": "directory"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["name"] == "Untitled Folder"
+    assert data["type"] == "directory"
+    assert (tmp_path / "Untitled Folder").is_dir()
+
+
+def test_post_untitled_directory_collision(client, tmp_path):
+    (tmp_path / "Untitled Folder").mkdir()
+    resp = client.post("/api/contents", json={"type": "directory"})
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Untitled Folder 1"
+
+
+def test_post_untitled_in_subdir(client, tmp_path):
+    (tmp_path / "sub").mkdir()
+    resp = client.post("/api/contents/sub", json={"type": "file", "ext": ".txt"})
+    assert resp.status_code == 200
+    assert resp.json()["path"] == "sub/untitled.txt"
+    assert (tmp_path / "sub" / "untitled.txt").exists()
+
+
+def test_post_untitled_missing_parent_404(client):
+    resp = client.post("/api/contents/does_not_exist", json={"type": "file"})
+    assert resp.status_code == 404
+
+
+def test_post_untitled_refreshes_workflows(client, tmp_path):
+    resp = client.post("/api/contents", json={"type": "file", "ext": ".ga"})
+    assert resp.status_code == 200
+    # Newly created empty .ga isn't a valid workflow, but the refresh hook
+    # should still run without error and /workflows should be callable.
+    wf_resp = client.get("/workflows")
+    assert wf_resp.status_code == 200
+
+
+def test_format_override_base64_on_text(client, tmp_path):
+    (tmp_path / "hello.txt").write_text("greetings")
+    resp = client.get("/api/contents/hello.txt?format=base64")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["format"] == "base64"
+    assert base64.b64decode(data["content"]) == b"greetings"
+
+
+def test_format_override_text_on_binary_400(client, tmp_path):
+    (tmp_path / "blob.bin").write_bytes(b"\x00\x01\xff")
+    resp = client.get("/api/contents/blob.bin?format=text")
+    assert resp.status_code == 400
+
+
+def test_format_override_invalid_400(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    resp = client.get("/api/contents/f.txt?format=json")
+    assert resp.status_code == 400
+
+
+def test_put_if_unmodified_since_stale_409(client, tmp_path):
+    # Create a file on disk with a recent mtime.
+    (tmp_path / "f.txt").write_text("original")
+    body = {
+        "name": "f.txt",
+        "path": "f.txt",
+        "type": "file",
+        "writable": True,
+        "created": "2026-01-01T00:00:00Z",
+        "last_modified": "2026-01-01T00:00:00Z",
+        "format": "text",
+        "content": "new",
+    }
+    # Supply a stale HTTP-date (year 2000): disk mtime is far newer.
+    resp = client.put(
+        "/api/contents/f.txt",
+        json=body,
+        headers={"If-Unmodified-Since": "Sat, 01 Jan 2000 00:00:00 GMT"},
+    )
+    assert resp.status_code == 409
+    # File is untouched
+    assert (tmp_path / "f.txt").read_text() == "original"
+
+
+def test_put_if_unmodified_since_fresh_ok(client, tmp_path):
+    # When the header is from the future, disk mtime is older → write succeeds.
+    (tmp_path / "f.txt").write_text("original")
+    body = {
+        "name": "f.txt",
+        "path": "f.txt",
+        "type": "file",
+        "writable": True,
+        "created": "2026-01-01T00:00:00Z",
+        "last_modified": "2026-01-01T00:00:00Z",
+        "format": "text",
+        "content": "new",
+    }
+    resp = client.put(
+        "/api/contents/f.txt",
+        json=body,
+        headers={"If-Unmodified-Since": "Sun, 01 Jan 2099 00:00:00 GMT"},
+    )
+    assert resp.status_code == 200
+    assert (tmp_path / "f.txt").read_text() == "new"
+
+
+def test_put_if_unmodified_since_invalid_400(client, tmp_path):
+    body = {
+        "name": "f.txt",
+        "path": "f.txt",
+        "type": "file",
+        "writable": True,
+        "created": "2026-01-01T00:00:00Z",
+        "last_modified": "2026-01-01T00:00:00Z",
+        "format": "text",
+        "content": "x",
+    }
+    resp = client.put(
+        "/api/contents/f.txt",
+        json=body,
+        headers={"If-Unmodified-Since": "not a date"},
+    )
+    assert resp.status_code == 400
+
+
+def test_put_no_conflict_check_overwrites(client, tmp_path):
+    # Without the header, stale body last_modified is ignored (phase 1 behavior).
+    (tmp_path / "f.txt").write_text("original")
+    body = {
+        "name": "f.txt",
+        "path": "f.txt",
+        "type": "file",
+        "writable": True,
+        "created": "2026-01-01T00:00:00Z",
+        "last_modified": "2026-01-01T00:00:00Z",
+        "format": "text",
+        "content": "new",
+    }
+    resp = client.put("/api/contents/f.txt", json=body)
+    assert resp.status_code == 200
+    assert (tmp_path / "f.txt").read_text() == "new"
+
+
+def test_create_checkpoint(client, tmp_path):
+    (tmp_path / "f.txt").write_text("original")
+    resp = client.post("/api/contents/f.txt/checkpoints")
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["id"] == "checkpoint"
+    assert "last_modified" in data
+    assert (tmp_path / ".checkpoints" / "f.txt" / "checkpoint").read_text() == "original"
+
+
+def test_create_checkpoint_missing_file_404(client):
+    resp = client.post("/api/contents/nope.txt/checkpoints")
+    assert resp.status_code == 404
+
+
+def test_list_checkpoints_empty(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    resp = client.get("/api/contents/f.txt/checkpoints")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_list_checkpoints_after_create(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    client.post("/api/contents/f.txt/checkpoints")
+    resp = client.get("/api/contents/f.txt/checkpoints")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["id"] == "checkpoint"
+
+
+def test_restore_checkpoint(client, tmp_path):
+    (tmp_path / "f.txt").write_text("original")
+    client.post("/api/contents/f.txt/checkpoints")
+    (tmp_path / "f.txt").write_text("edited")
+    resp = client.post("/api/contents/f.txt/checkpoints/checkpoint")
+    assert resp.status_code == 204
+    assert (tmp_path / "f.txt").read_text() == "original"
+
+
+def test_restore_checkpoint_missing_404(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    resp = client.post("/api/contents/f.txt/checkpoints/nope")
+    assert resp.status_code == 404
+
+
+def test_delete_checkpoint(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    client.post("/api/contents/f.txt/checkpoints")
+    resp = client.delete("/api/contents/f.txt/checkpoints/checkpoint")
+    assert resp.status_code == 204
+    assert client.get("/api/contents/f.txt/checkpoints").json() == []
+    # Cleanup: empty checkpoint dir removed too
+    assert not (tmp_path / ".checkpoints" / "f.txt").exists()
+
+
+def test_delete_checkpoint_missing_404(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    resp = client.delete("/api/contents/f.txt/checkpoints/nope")
+    assert resp.status_code == 404
+
+
+def test_checkpoints_dir_hidden_from_listing(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    client.post("/api/contents/f.txt/checkpoints")
+    resp = client.get("/api/contents")
+    names = [c["name"] for c in resp.json()["content"]]
+    assert "f.txt" in names
+    assert ".checkpoints" not in names
+
+
+def test_checkpoints_path_forbidden(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    client.post("/api/contents/f.txt/checkpoints")
+    # User cannot reach the .checkpoints tree via the contents API
+    resp = client.get("/api/contents/.checkpoints/f.txt/checkpoint")
+    assert resp.status_code == 403
+
+
+def test_delete_file_cascades_checkpoints(client, tmp_path):
+    (tmp_path / "f.txt").write_text("x")
+    client.post("/api/contents/f.txt/checkpoints")
+    assert (tmp_path / ".checkpoints" / "f.txt" / "checkpoint").exists()
+    resp = client.delete("/api/contents/f.txt")
+    assert resp.status_code == 204
+    assert not (tmp_path / ".checkpoints" / "f.txt").exists()
+
+
+def test_rename_file_cascades_checkpoints(client, tmp_path):
+    (tmp_path / "old.txt").write_text("x")
+    client.post("/api/contents/old.txt/checkpoints")
+    resp = client.patch("/api/contents/old.txt", json={"path": "new.txt"})
+    assert resp.status_code == 200
+    assert not (tmp_path / ".checkpoints" / "old.txt").exists()
+    assert (tmp_path / ".checkpoints" / "new.txt" / "checkpoint").read_text() == "x"
+    # Checkpoint is still usable under the new name
+    resp = client.get("/api/contents/new.txt/checkpoints")
+    assert len(resp.json()) == 1
+
+
+def test_delete_directory_cascades_nested_checkpoints(client, tmp_path):
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "sub" / "f.txt").write_text("x")
+    client.post("/api/contents/sub/f.txt/checkpoints")
+    assert (tmp_path / ".checkpoints" / "sub" / "f.txt" / "checkpoint").exists()
+    resp = client.delete("/api/contents/sub")
+    assert resp.status_code == 204
+    assert not (tmp_path / ".checkpoints" / "sub").exists()
+
+
+def test_checkpoint_on_directory_404(client, tmp_path):
+    (tmp_path / "d").mkdir()
+    resp = client.post("/api/contents/d/checkpoints")
+    assert resp.status_code == 404
+
+
 def test_symlink_escape_forbidden(client, tmp_path):
     outside = tmp_path.parent / "outside_target"
     outside.mkdir()

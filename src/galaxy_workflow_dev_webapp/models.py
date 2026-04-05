@@ -48,3 +48,17 @@ class RenameRequest(BaseModel):
     """Body for PATCH /api/contents/{path} — rename/move."""
 
     path: str
+
+
+class CreateRequest(BaseModel):
+    """Body for POST /api/contents/{path} — create untitled file or directory under {path}."""
+
+    type: Literal["file", "directory"] = "file"
+    ext: Optional[str] = None
+
+
+class CheckpointModel(BaseModel):
+    """Checkpoint metadata (Jupyter Contents API shape)."""
+
+    id: str
+    last_modified: datetime
