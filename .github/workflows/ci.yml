@@ -50,7 +50,8 @@ jobs:
       - name: Install project
         run: |
           rm uv.lock
-          uv sync --no-sources --find-links wheels --group test --group lint --group mypy
+          sed -i '/^\[tool\.uv\.sources\]/,/^$/d' pyproject.toml
+          uv sync --find-links wheels --group test --group lint --group mypy
 
       - name: Lint
         if: matrix.python-version == '3.13'
@@ -95,7 +96,8 @@ jobs:
       - name: Install project
         run: |
           rm uv.lock
-          uv sync --no-sources --find-links wheels --group docs
+          sed -i '/^\[tool\.uv\.sources\]/,/^$/d' pyproject.toml
+          uv sync --find-links wheels --group docs
 
       - name: Build docs
         run: |
