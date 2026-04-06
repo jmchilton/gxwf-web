@@ -1,6 +1,6 @@
-# galaxy-workflow-development-webapp
+# gxwf-web
 
-**galaxy-workflow-development-webapp** is a thin FastAPI shell over
+**gxwf-web** is a thin FastAPI shell over
 `galaxy.tool_util.workflow_state`. It exposes two HTTP surfaces — a workflow
 operations API (validate, clean, lint, to-format2, to-native, roundtrip) and a
 Jupyter Contents API-compatible file layer — as the HTTP backing for frontend
@@ -48,7 +48,7 @@ Auto-generated OpenAPI reference for every endpoint.
 :link: cli
 :link-type: doc
 
-`galaxy-workflow-dev` command-line reference.
+`gxwf-web` command-line reference.
 :::
 
 ::::

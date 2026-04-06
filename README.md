@@ -1,4 +1,4 @@
-# galaxy-workflow-development-webapp
+# gxwf-web
 
 HTTP layer over [`galaxy.tool_util.workflow_state`][wfstate] for Galaxy
 workflow development tooling. A thin FastAPI shell exposing two API surfaces:
@@ -22,7 +22,7 @@ tomorrow [IWC][iwc] and a VSCode extension — uses to exercise the
 ```{mermaid}
 flowchart LR
     Client[Frontend / VSCode / curl]
-    subgraph Webapp[galaxy-workflow-development-webapp]
+    subgraph Webapp[gxwf-web]
         Contents[/api/contents/...]
         Ops[/workflows/path/op]
         Operations[operations.py]
@@ -61,8 +61,8 @@ See `docs/workflow_ops.md` and `docs/contents_api.md` for per-endpoint detail.
 ## Install / run
 
 ```console
-$ pip install galaxy-workflow-development-webapp
-$ galaxy-workflow-dev /path/to/workflows
+$ pip install gxwf-web
+$ gxwf-web /path/to/workflows
 ```
 
 Serves on `http://127.0.0.1:8000`. The target directory is scanned for `.ga`
@@ -71,7 +71,7 @@ and format2 workflows on startup; `POST /workflows/refresh` rescans.
 Dump the OpenAPI schema without starting the server:
 
 ```console
-$ galaxy-workflow-dev --output-schema openapi.json
+$ gxwf-web --output-schema openapi.json
 ```
 
 For development against a local `wf_tool_state` Galaxy worktree and gxformat2

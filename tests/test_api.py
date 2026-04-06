@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from galaxy_workflow_dev_webapp import app as app_module
+from gxwf_web import app as app_module
 
 
 @pytest.fixture

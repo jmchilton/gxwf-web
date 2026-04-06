@@ -70,7 +70,7 @@ jobs:
 
       - name: Type check
         if: matrix.python-version == '3.13'
-        run: uv run --group mypy mypy src/galaxy_workflow_dev_webapp
+        run: uv run --group mypy mypy src/gxwf_web
 
       - name: Test
         run: uv run --group test pytest tests/ -v
@@ -116,11 +116,11 @@ jobs:
 
       - name: Build docs
         run: |
-          uv run sphinx-apidoc -f -o docs/ src/galaxy_workflow_dev_webapp
+          uv run sphinx-apidoc -f -o docs/ src/gxwf_web
           uv run sphinx-build -b html docs/ docs/_build/html
 
       - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main' && github.repository == 'jmchilton/galaxy-workflow-development-webapp'
+        if: github.ref == 'refs/heads/main' && github.repository == 'jmchilton/gxwf-web'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs/_build/html

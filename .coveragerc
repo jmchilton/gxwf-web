@@ -1,7 +1,7 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-source = galaxy_workflow_dev_webapp
+source = gxwf_web
 omit = */tests/*
 
 [report]

@@ -1,6 +1,6 @@
 VENV?=.venv
 IN_VENV=if [ -f $(VENV)/bin/activate ]; then . $(VENV)/bin/activate; fi;
-SOURCE_DIR?=src/galaxy_workflow_dev_webapp
+SOURCE_DIR?=src/gxwf_web
 TEST_DIR?=tests
 DOCS_DIR?=docs
 
@@ -66,7 +66,7 @@ coverage: ## check code coverage
 	open htmlcov/index.html || xdg-open htmlcov/index.html
 
 docs-openapi: ## regenerate committed OpenAPI schema dump
-	uv run --group docs galaxy-workflow-dev --output-schema $(DOCS_DIR)/_static/openapi.json
+	uv run --group docs gxwf-web --output-schema $(DOCS_DIR)/_static/openapi.json
 
 docs-clean: ## remove built docs
 	rm -rf $(DOCS_DIR)/_build

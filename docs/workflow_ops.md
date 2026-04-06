@@ -13,7 +13,7 @@ single library function, and returns the resulting report verbatim.
 Validate an IWC workflow via `curl`:
 
 ```console
-$ galaxy-workflow-dev ~/projects/iwc &
+$ gxwf-web ~/projects/iwc &
 $ curl "http://127.0.0.1:8000/workflows/workflows/variant-calling/variant-calling/variant-calling.ga/validate?strict=true"
 ```
 

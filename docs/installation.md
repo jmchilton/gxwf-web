@@ -3,14 +3,14 @@
 ## From PyPI
 
 ```console
-$ pip install galaxy-workflow-development-webapp
+$ pip install gxwf-web
 ```
 
 ## From source (development)
 
 ```console
-$ git clone https://github.com/jmchilton/galaxy-workflow-development-webapp
-$ cd galaxy-workflow-development-webapp
+$ git clone https://github.com/jmchilton/gxwf-web
+$ cd gxwf-web
 $ make setup-venv
 ```
 
@@ -24,7 +24,7 @@ on startup. Point it at any directory — a clone of
 [IWC](https://github.com/galaxyproject/iwc) is the typical target:
 
 ```console
-$ galaxy-workflow-dev ~/projects/repositories/iwc
+$ gxwf-web ~/projects/repositories/iwc
 ```
 
 Re-scan after external edits with `POST /workflows/refresh` (mutations via

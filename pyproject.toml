@@ -3,7 +3,7 @@ requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "galaxy-workflow-development-webapp"
+name = "gxwf-web"
 dynamic = ["version"]
 description = "FastAPI service for Galaxy workflow validation, linting, cleaning, and format conversion"
 readme = "README.md"
@@ -43,10 +43,10 @@ dependencies = [
 ]
 
 [project.scripts]
-galaxy-workflow-dev = "galaxy_workflow_dev_webapp.__main__:main"
+gxwf-web = "gxwf_web.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/jmchilton/galaxy-workflow-development-webapp"
+Homepage = "https://github.com/jmchilton/gxwf-web"
 
 [dependency-groups]
 lint = [
@@ -75,11 +75,11 @@ docs = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "galaxy_workflow_dev_webapp.__version__"}
+version = {attr = "gxwf_web.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["galaxy_workflow_dev_webapp*"]
+include = ["gxwf_web*"]
 
 [tool.ruff]
 line-length = 120
@@ -87,7 +87,7 @@ line-length = 120
 [tool.isort]
 profile = "black"
 line_length = 120
-known_first_party = ["galaxy_workflow_dev_webapp"]
+known_first_party = ["gxwf_web"]
 force_alphabetical_sort_within_sections = true
 
 [tool.black]

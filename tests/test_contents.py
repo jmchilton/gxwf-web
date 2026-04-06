@@ -6,7 +6,7 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-from galaxy_workflow_dev_webapp import app as app_module
+from gxwf_web import app as app_module
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ def test_path_escape_403(tmp_path):
     # TestClient normalizes `..` in URLs, so test at the function level.
     from fastapi import HTTPException
 
-    from galaxy_workflow_dev_webapp.contents import resolve_safe_path
+    from gxwf_web.contents import resolve_safe_path
 
     with pytest.raises(HTTPException) as exc:
         resolve_safe_path(str(tmp_path), "../outside")

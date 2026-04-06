@@ -513,7 +513,61 @@ requires-dist = [
 provides-extras = ["image-util", "jstree", "template", "config-template", "test"]
 
 [[package]]
-name = "galaxy-workflow-development-webapp"
+name = "gxformat2"
+source = { editable = "../../worktrees/gxformat2/branch/abstraction_applications" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "schema-salad" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "schema-salad", specifier = ">8.7.20241010092723" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "cwltool", specifier = ">=3.0.20200807132242" },
+    { name = "schema-salad", extras = ["pycodegen"] },
+    { name = "schema-salad-plus-pydantic", specifier = ">=0.1.3" },
+]
+docs = [
+    { name = "myst-parser" },
+    { name = "sphinx" },
+    { name = "sphinx-argparse" },
+    { name = "sphinx-rtd-theme" },
+    { name = "sphinxcontrib-mermaid" },
+]
+lint = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "flake8-bugbear" },
+    { name = "isort" },
+    { name = "ruff" },
+]
+mypy = [
+    { name = "mypy" },
+    { name = "types-pyyaml" },
+    { name = "types-requests" },
+]
+test = [
+    { name = "cwltool", specifier = ">=3.0.20200807132242" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pytest" },
+    { name = "schema-salad", extras = ["pycodegen"] },
+    { name = "schema-salad-plus-pydantic", specifier = ">=0.1.3" },
+]
+
+[[package]]
+name = "gxwf-web"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
@@ -594,60 +648,6 @@ test = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
-]
-
-[[package]]
-name = "gxformat2"
-source = { editable = "../../worktrees/gxformat2/branch/abstraction_applications" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "schema-salad" },
-    { name = "typing-extensions" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "schema-salad", specifier = ">8.7.20241010092723" },
-    { name = "typing-extensions" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "cwltool", specifier = ">=3.0.20200807132242" },
-    { name = "schema-salad", extras = ["pycodegen"] },
-    { name = "schema-salad-plus-pydantic", specifier = ">=0.1.3" },
-]
-docs = [
-    { name = "myst-parser" },
-    { name = "sphinx" },
-    { name = "sphinx-argparse" },
-    { name = "sphinx-rtd-theme" },
-    { name = "sphinxcontrib-mermaid" },
-]
-lint = [
-    { name = "black" },
-    { name = "flake8" },
-    { name = "flake8-bugbear" },
-    { name = "isort" },
-    { name = "ruff" },
-]
-mypy = [
-    { name = "mypy" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-]
-test = [
-    { name = "cwltool", specifier = ">=3.0.20200807132242" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pytest" },
-    { name = "schema-salad", extras = ["pycodegen"] },
-    { name = "schema-salad-plus-pydantic", specifier = ">=0.1.3" },
 ]
 
 [[package]]

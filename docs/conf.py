@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
 
-import galaxy_workflow_dev_webapp as project_module  # noqa: E402
+import gxwf_web as project_module  # noqa: E402
 
 # -- General configuration ---------------------------------------------
 
@@ -33,7 +33,7 @@ templates_path = ["_templates"]
 source_suffix = [".rst", ".md"]
 master_doc = "index"
 
-project = "galaxy-workflow-development-webapp"
+project = "gxwf-web"
 copyright = "2025-2026, Galaxy Project and Community"
 
 version = project_module.__version__
@@ -48,7 +48,7 @@ html_theme = "pydata_sphinx_theme"
 
 html_theme_options = {
     "logo": {
-        "text": "galaxy-workflow-development-webapp",
+        "text": "gxwf-web",
     },
     "header_links_before_dropdown": 6,
     "pygments_light_style": "default",
@@ -58,7 +58,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/jmchilton/galaxy-workflow-development-webapp",
+            "url": "https://github.com/jmchilton/gxwf-web",
             "icon": "fa-brands fa-github",
         },
         {
@@ -73,7 +73,7 @@ html_theme_options = {
 
 html_static_path = ["_static"]
 html_css_files = ["css/galaxy.css"]
-html_title = "galaxy-workflow-development-webapp"
-html_short_title = "workflow-dev-webapp"
+html_title = "gxwf-web"
+html_short_title = "gxwf-web"
 
-htmlhelp_basename = "galaxyworkflowdevwebappdoc"
+htmlhelp_basename = "gxwfwebdoc"

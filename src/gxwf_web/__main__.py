@@ -37,7 +37,7 @@ def main():
         _build_parser().error("directory is required when not using --output-schema")
 
     configure(args.directory)
-    uvicorn.run("galaxy_workflow_dev_webapp.app:app", host=args.host, port=args.port)
+    uvicorn.run("gxwf_web.app:app", host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
