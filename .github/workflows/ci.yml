@@ -26,23 +26,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout Galaxy branch
-        uses: actions/checkout@v4
-        with:
-          repository: jmchilton/galaxy
-          ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
-          path: ${{ runner.temp }}/galaxy
-          sparse-checkout: |
-            packages/util
-            packages/tool_util_models
-            packages/tool_util
-
-      - name: Checkout gxformat2 branch
-        uses: actions/checkout@v4
-        with:
-          repository: galaxyproject/gxformat2
-          ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
-          path: ${{ runner.temp }}/gxformat2
+      - name: Clone dependency forks
+        run: |
+          git clone --depth 1 --sparse -b "${{ inputs.galaxy_ref || 'wf_tool_state' }}" \
+            https://github.com/jmchilton/galaxy.git "${{ runner.temp }}/galaxy"
+          git -C "${{ runner.temp }}/galaxy" sparse-checkout set packages/util packages/tool_util_models packages/tool_util
+          git clone --depth 1 -b "${{ inputs.gxformat2_ref || 'abstraction_applications' }}" \
+            https://github.com/galaxyproject/gxformat2.git "${{ runner.temp }}/gxformat2"
 
       - uses: astral-sh/setup-uv@v4
 
@@ -53,9 +43,9 @@ jobs:
       - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
-            uv build ${{ runner.temp }}/galaxy/packages/$pkg --out-dir wheels
+            uv build "${{ runner.temp }}/galaxy/packages/$pkg" --out-dir wheels
           done
-          uv build ${{ runner.temp }}/gxformat2 --out-dir wheels
+          uv build "${{ runner.temp }}/gxformat2" --out-dir wheels
 
       - name: Install project
         run: |
@@ -81,23 +71,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout Galaxy branch
-        uses: actions/checkout@v4
-        with:
-          repository: jmchilton/galaxy
-          ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
-          path: ${{ runner.temp }}/galaxy
-          sparse-checkout: |
-            packages/util
-            packages/tool_util_models
-            packages/tool_util
-
-      - name: Checkout gxformat2 branch
-        uses: actions/checkout@v4
-        with:
-          repository: galaxyproject/gxformat2
-          ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
-          path: ${{ runner.temp }}/gxformat2
+      - name: Clone dependency forks
+        run: |
+          git clone --depth 1 --sparse -b "${{ inputs.galaxy_ref || 'wf_tool_state' }}" \
+            https://github.com/jmchilton/galaxy.git "${{ runner.temp }}/galaxy"
+          git -C "${{ runner.temp }}/galaxy" sparse-checkout set packages/util packages/tool_util_models packages/tool_util
+          git clone --depth 1 -b "${{ inputs.gxformat2_ref || 'abstraction_applications' }}" \
+            https://github.com/galaxyproject/gxformat2.git "${{ runner.temp }}/gxformat2"
 
       - uses: astral-sh/setup-uv@v4
 
@@ -108,9 +88,9 @@ jobs:
       - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
-            uv build ${{ runner.temp }}/galaxy/packages/$pkg --out-dir wheels
+            uv build "${{ runner.temp }}/galaxy/packages/$pkg" --out-dir wheels
           done
-          uv build ${{ runner.temp }}/gxformat2 --out-dir wheels
+          uv build "${{ runner.temp }}/gxformat2" --out-dir wheels
 
       - name: Install project
         run: |
