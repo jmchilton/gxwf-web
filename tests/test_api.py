@@ -40,3 +40,20 @@ def test_openapi_schema(client):
     assert "/workflows/{workflow_path}/roundtrip" in paths
     assert "/workflows/{workflow_path}/to-format2" in paths
     assert "/workflows/{workflow_path}/to-native" in paths
+
+
+def test_workflow_endpoints_have_typed_response_schemas(client):
+    """All workflow operation endpoints must declare $ref response schemas (no title-only schemas)."""
+    resp = client.get("/openapi.json")
+    schema = resp.json()
+    operation_paths = [
+        "/workflows/{workflow_path}/validate",
+        "/workflows/{workflow_path}/clean",
+        "/workflows/{workflow_path}/lint",
+        "/workflows/{workflow_path}/roundtrip",
+        "/workflows/{workflow_path}/to-format2",
+        "/workflows/{workflow_path}/to-native",
+    ]
+    for path in operation_paths:
+        response_schema = schema["paths"][path]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert "$ref" in response_schema, f"{path} response schema has no $ref (got: {response_schema})"

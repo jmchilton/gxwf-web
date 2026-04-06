@@ -4,7 +4,6 @@ import os
 from contextlib import asynccontextmanager
 from email.utils import parsedate_to_datetime
 from typing import (
-    Any,
     List,
     Optional,
 )
@@ -32,6 +31,15 @@ from .contents import (
     restore_checkpoint,
     write_contents,
 )
+from galaxy.tool_util.workflow_state._report_models import (
+    SingleCleanReport,
+    SingleLintReport,
+    SingleValidationReport,
+)
+from galaxy.tool_util.workflow_state.export_format2 import SingleExportReport
+from galaxy.tool_util.workflow_state.roundtrip import SingleRoundTripReport
+from galaxy.tool_util.workflow_state.to_native_stateful import ToNativeResult
+
 from .models import (
     CheckpointModel,
     ContentsModel,
@@ -123,7 +131,7 @@ async def validate_workflow(
     mode: str = "pydantic",
     allow: List[str] = Query(default=[]),
     deny: List[str] = Query(default=[]),
-) -> Any:
+) -> SingleValidationReport:
     """Validate a workflow's tool state against tool definitions."""
     wf = _get_workflow(workflow_path)
     return run_validate(
@@ -142,7 +150,7 @@ async def clean_workflow(
     workflow_path: str,
     preserve: List[str] = Query(default=[]),
     strip: List[str] = Query(default=[]),
-) -> Any:
+) -> SingleCleanReport:
     """Report stale tool state keys in a workflow."""
     wf = _get_workflow(workflow_path)
     return run_clean(
@@ -156,7 +164,7 @@ async def clean_workflow(
 @app.get("/workflows/{workflow_path:path}/to-format2")
 async def to_format2(
     workflow_path: str,
-) -> Any:
+) -> SingleExportReport:
     """Convert a native workflow to format2 with schema-aware state."""
     wf = _get_workflow(workflow_path)
     result = run_to_format2(wf, _tool_info)
@@ -168,7 +176,7 @@ async def to_format2(
 @app.get("/workflows/{workflow_path:path}/to-native")
 async def to_native(
     workflow_path: str,
-) -> Any:
+) -> ToNativeResult:
     """Convert a format2 workflow to native Galaxy format with schema-aware state."""
     wf = _get_workflow(workflow_path)
     return run_to_native(wf, _tool_info)
@@ -177,7 +185,7 @@ async def to_native(
 @app.get("/workflows/{workflow_path:path}/roundtrip")
 async def roundtrip_workflow(
     workflow_path: str,
-) -> Any:
+) -> SingleRoundTripReport:
     """Run round-trip validation (native -> format2 -> native)."""
     wf = _get_workflow(workflow_path)
     return run_roundtrip(wf, _tool_info)
@@ -310,7 +318,7 @@ async def lint_workflow(
     strict: bool = False,
     allow: List[str] = Query(default=[]),
     deny: List[str] = Query(default=[]),
-) -> Any:
+) -> SingleLintReport:
     """Lint a workflow (structural + tool state validation)."""
     wf = _get_workflow(workflow_path)
     return run_lint(
