@@ -2,13 +2,12 @@
 
 import os
 from contextlib import asynccontextmanager
+from email.utils import parsedate_to_datetime
 from typing import (
     Any,
     List,
     Optional,
 )
-
-from email.utils import parsedate_to_datetime
 
 from fastapi import (
     FastAPI,
