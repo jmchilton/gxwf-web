@@ -31,7 +31,7 @@ jobs:
         with:
           repository: jmchilton/galaxy
           ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
-          path: _galaxy
+          path: ${{ runner.temp }}/galaxy
           sparse-checkout: |
             packages/util
             packages/tool_util_models
@@ -42,7 +42,7 @@ jobs:
         with:
           repository: galaxyproject/gxformat2
           ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
-          path: _gxformat2
+          path: ${{ runner.temp }}/gxformat2
 
       - uses: astral-sh/setup-uv@v4
 
@@ -53,9 +53,9 @@ jobs:
       - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
-            uv build _galaxy/packages/$pkg --out-dir wheels
+            uv build ${{ runner.temp }}/galaxy/packages/$pkg --out-dir wheels
           done
-          uv build _gxformat2 --out-dir wheels
+          uv build ${{ runner.temp }}/gxformat2 --out-dir wheels
 
       - name: Install project
         run: |
@@ -86,7 +86,7 @@ jobs:
         with:
           repository: jmchilton/galaxy
           ref: ${{ inputs.galaxy_ref || 'wf_tool_state' }}
-          path: _galaxy
+          path: ${{ runner.temp }}/galaxy
           sparse-checkout: |
             packages/util
             packages/tool_util_models
@@ -97,7 +97,7 @@ jobs:
         with:
           repository: galaxyproject/gxformat2
           ref: ${{ inputs.gxformat2_ref || 'abstraction_applications' }}
-          path: _gxformat2
+          path: ${{ runner.temp }}/gxformat2
 
       - uses: astral-sh/setup-uv@v4
 
@@ -108,9 +108,9 @@ jobs:
       - name: Build dependency wheels
         run: |
           for pkg in util tool_util_models tool_util; do
-            uv build _galaxy/packages/$pkg --out-dir wheels
+            uv build ${{ runner.temp }}/galaxy/packages/$pkg --out-dir wheels
           done
-          uv build _gxformat2 --out-dir wheels
+          uv build ${{ runner.temp }}/gxformat2 --out-dir wheels
 
       - name: Install project
         run: |
