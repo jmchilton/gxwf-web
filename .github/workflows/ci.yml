@@ -59,21 +59,22 @@ jobs:
 
       - name: Install project
         run: |
+          rm uv.lock
           uv sync --no-sources --find-links wheels --group test --group lint --group mypy
 
       - name: Lint
         if: matrix.python-version == '3.13'
         run: |
-          uv run --no-sync --group lint isort --check --diff .
-          uv run --no-sync --group lint ruff check
-          uv run --no-sync --group lint black --check --diff .
+          uv run --no-sync isort --check --diff .
+          uv run --no-sync ruff check
+          uv run --no-sync black --check --diff .
 
       - name: Type check
         if: matrix.python-version == '3.13'
-        run: uv run --no-sync --group mypy mypy src/gxwf_web
+        run: uv run --no-sync mypy src/gxwf_web
 
       - name: Test
-        run: uv run --no-sync --group test pytest tests/ -v
+        run: uv run --no-sync pytest tests/ -v
 
   docs:
     runs-on: ubuntu-latest
@@ -112,7 +113,9 @@ jobs:
           uv build _gxformat2 --out-dir wheels
 
       - name: Install project
-        run: uv sync --no-sources --find-links wheels --group docs
+        run: |
+          rm uv.lock
+          uv sync --no-sources --find-links wheels --group docs
 
       - name: Build docs
         run: |
