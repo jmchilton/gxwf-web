@@ -82,7 +82,7 @@ where = ["src"]
 include = ["gxwf_web*"]
 
 [tool.setuptools.package-data]
-gxwf_web = ["static/**/*", "static/*"]
+gxwf_web = ["static/**/*"]
 
 [tool.ruff]
 line-length = 120

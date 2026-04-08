@@ -76,7 +76,14 @@ def configure(directory: str):
 def configure_ui(ui_dir: str):
     """Set the UI dist directory before app startup."""
     global _ui_dir
-    _ui_dir = Path(ui_dir).resolve()
+    p = Path(ui_dir).resolve()
+    if not p.is_dir():
+        raise RuntimeError(f"UI directory does not exist: {p}")
+    if not (p / "index.html").is_file():
+        raise RuntimeError(f"UI directory missing index.html: {p}")
+    if not (p / "assets").is_dir():
+        raise RuntimeError(f"UI directory missing assets/: {p}")
+    _ui_dir = p
 
 
 @asynccontextmanager

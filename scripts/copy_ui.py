@@ -25,6 +25,9 @@ def main():
     if not (src / "index.html").is_file():
         print(f"Error: {src} does not look like a Vite dist/ (no index.html)", file=sys.stderr)
         sys.exit(1)
+    if not (src / "assets").is_dir():
+        print(f"Error: {src} missing assets/ subdirectory", file=sys.stderr)
+        sys.exit(1)
 
     if DEST.exists():
         shutil.rmtree(DEST)
