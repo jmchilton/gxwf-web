@@ -17,3 +17,4 @@ _gxformat2/
 htmlcov/
 docs/_build/
 .mypy_cache/
+src/gxwf_web/static/

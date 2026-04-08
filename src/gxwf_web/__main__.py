@@ -2,11 +2,13 @@
 
 import argparse
 import json
+import os
 import sys
+from pathlib import Path
 
 import uvicorn
 
-from .app import app, configure
+from .app import app, configure, configure_ui
 
 
 def _build_parser():
@@ -16,6 +18,9 @@ def _build_parser():
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument(
         "--output-schema", metavar="FILE", nargs="?", const="-", help="Dump OpenAPI schema and exit (default: stdout)"
+    )
+    parser.add_argument(
+        "--ui-dir", metavar="DIR", help="Path to gxwf-ui dist/ to serve (overrides GXWF_UI_DIST env var and bundled copy)"
     )
     return parser
 
@@ -37,6 +42,16 @@ def main():
         _build_parser().error("directory is required when not using --output-schema")
 
     configure(args.directory)
+
+    # UI dir resolution: --ui-dir > GXWF_UI_DIST env var > bundled static/
+    ui_dir = args.ui_dir or os.environ.get("GXWF_UI_DIST")
+    if ui_dir is None:
+        bundled = Path(__file__).parent / "static"
+        if bundled.is_dir():
+            ui_dir = str(bundled)
+    if ui_dir is not None:
+        configure_ui(ui_dir)
+
     uvicorn.run("gxwf_web.app:app", host=args.host, port=args.port)
 
 

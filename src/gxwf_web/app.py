@@ -3,6 +3,7 @@
 import os
 from contextlib import asynccontextmanager
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import (
     List,
     Optional,
@@ -14,6 +15,8 @@ from fastapi import (
     HTTPException,
     Query,
 )
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from galaxy.tool_util.workflow_state.workflow_tree import (
     discover_workflows,
     WorkflowInfo,
@@ -61,12 +64,19 @@ from .operations import (
 _tool_info = None
 _directory: Optional[str] = None
 _workflows: Optional[List[WorkflowInfo]] = None
+_ui_dir: Optional[Path] = None
 
 
 def configure(directory: str):
     """Set the workflow directory before app startup."""
     global _directory
     _directory = os.path.abspath(directory)
+
+
+def configure_ui(ui_dir: str):
+    """Set the UI dist directory before app startup."""
+    global _ui_dir
+    _ui_dir = Path(ui_dir).resolve()
 
 
 @asynccontextmanager
@@ -78,6 +88,8 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(f"Directory does not exist: {_directory}")
     _tool_info = get_tool_info()
     _workflows = discover_workflows(_directory)
+    if _ui_dir is not None:
+        app.mount("/assets", StaticFiles(directory=_ui_dir / "assets"), name="assets")
     yield
 
 
@@ -328,3 +340,11 @@ async def lint_workflow(
         allow=allow,
         deny=deny,
     )
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    """Serve the SPA index.html for all unmatched GET routes."""
+    if _ui_dir is None:
+        raise HTTPException(404, "Not found")
+    return FileResponse(_ui_dir / "index.html")

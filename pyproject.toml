@@ -81,6 +81,9 @@ version = {attr = "gxwf_web.__version__"}
 where = ["src"]
 include = ["gxwf_web*"]
 
+[tool.setuptools.package-data]
+gxwf_web = ["static/**/*", "static/*"]
+
 [tool.ruff]
 line-length = 120
 
