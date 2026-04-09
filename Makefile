@@ -4,7 +4,9 @@ SOURCE_DIR?=src/gxwf_web
 TEST_DIR?=tests
 DOCS_DIR?=docs
 
-.PHONY: clean-pyc clean-build docs clean
+GXWF_TEST_WORKFLOW_DIRECTORY?=.
+
+.PHONY: clean-pyc clean-build docs clean serve
 
 help: ## show this help
 	@egrep '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -27,6 +29,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
+
+serve: ## start gxwf-web server (respects GXWF_UI_DIST and GXWF_TEST_WORKFLOW_DIRECTORY)
+	uv run gxwf-web $(GXWF_TEST_WORKFLOW_DIRECTORY)
 
 setup-venv: ## setup a development virtualenv in current directory
 	if command -v uv > /dev/null 2>&1; then \
