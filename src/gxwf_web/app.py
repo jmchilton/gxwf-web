@@ -16,7 +16,6 @@ from fastapi import (
     Query,
 )
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from galaxy.tool_util.workflow_state.workflow_tree import (
     discover_workflows,
     WorkflowInfo,
@@ -95,8 +94,6 @@ async def lifespan(app: FastAPI):
         raise RuntimeError(f"Directory does not exist: {_directory}")
     _tool_info = get_tool_info()
     _workflows = discover_workflows(_directory)
-    if _ui_dir is not None:
-        app.mount("/assets", StaticFiles(directory=_ui_dir / "assets"), name="assets")
     yield
 
 
@@ -145,9 +142,11 @@ async def refresh_workflows():
 @app.get("/workflows/{workflow_path:path}/validate")
 async def validate_workflow(
     workflow_path: str,
-    strict: bool = False,
+    strict_structure: bool = False,
+    strict_encoding: bool = False,
     connections: bool = False,
     mode: str = "pydantic",
+    clean_first: bool = False,
     allow: List[str] = Query(default=[]),
     deny: List[str] = Query(default=[]),
 ) -> SingleValidationReport:
@@ -156,9 +155,11 @@ async def validate_workflow(
     return run_validate(
         wf,
         _tool_info,
-        strict=strict,
+        strict_structure=strict_structure,
+        strict_encoding=strict_encoding,
         connections=connections,
         mode=mode,
+        clean_first=clean_first,
         allow=allow,
         deny=deny,
     )
@@ -169,6 +170,7 @@ async def clean_workflow(
     workflow_path: str,
     preserve: List[str] = Query(default=[]),
     strip: List[str] = Query(default=[]),
+    include_content: bool = False,
 ) -> SingleCleanReport:
     """Report stale tool state keys in a workflow."""
     wf = _get_workflow(workflow_path)
@@ -177,6 +179,7 @@ async def clean_workflow(
         _tool_info,
         preserve=preserve,
         strip=strip,
+        include_content=include_content,
     )
 
 
@@ -204,10 +207,21 @@ async def to_native(
 @app.get("/workflows/{workflow_path:path}/roundtrip")
 async def roundtrip_workflow(
     workflow_path: str,
+    strict_structure: bool = False,
+    strict_encoding: bool = False,
+    strict_state: bool = False,
+    include_content: bool = False,
 ) -> SingleRoundTripReport:
     """Run round-trip validation (native -> format2 -> native)."""
     wf = _get_workflow(workflow_path)
-    return run_roundtrip(wf, _tool_info)
+    return run_roundtrip(
+        wf,
+        _tool_info,
+        strict_structure=strict_structure,
+        strict_encoding=strict_encoding,
+        strict_state=strict_state,
+        include_content=include_content,
+    )
 
 
 def _maybe_refresh_workflows(rel_path: str) -> None:
@@ -334,7 +348,8 @@ async def rename_path_contents(path: str, body: RenameRequest) -> ContentsModel:
 @app.get("/workflows/{workflow_path:path}/lint")
 async def lint_workflow(
     workflow_path: str,
-    strict: bool = False,
+    strict_structure: bool = False,
+    strict_encoding: bool = False,
     allow: List[str] = Query(default=[]),
     deny: List[str] = Query(default=[]),
 ) -> SingleLintReport:
@@ -343,7 +358,8 @@ async def lint_workflow(
     return run_lint(
         wf,
         _tool_info,
-        strict=strict,
+        strict_structure=strict_structure,
+        strict_encoding=strict_encoding,
         allow=allow,
         deny=deny,
     )
@@ -351,7 +367,10 @@ async def lint_workflow(
 
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
-    """Serve the SPA index.html for all unmatched GET routes."""
+    """Serve static assets or fall back to SPA index.html."""
     if _ui_dir is None:
         raise HTTPException(404, "Not found")
+    candidate = _ui_dir / full_path
+    if candidate.is_file():
+        return FileResponse(candidate)
     return FileResponse(_ui_dir / "index.html")
