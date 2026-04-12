@@ -9,6 +9,8 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from galaxy.tool_util.workflow_state.export_format2 import SingleExportReport
+from galaxy.tool_util.workflow_state.to_native_stateful import ToNativeResult
 
 
 class WorkflowEntry(BaseModel):
@@ -62,5 +64,30 @@ class CheckpointModel(BaseModel):
 
     id: str
     last_modified: datetime
+
+
+class ExportResult(BaseModel):
+    """Result of an export (format conversion) operation."""
+
+    source_path: str
+    output_path: str
+    source_format: str
+    target_format: str
+    report: Union[SingleExportReport, ToNativeResult]
+    dry_run: bool
+    content: Optional[str] = None
+
+
+class ConvertResult(BaseModel):
+    """Result of a convert operation (export + remove original)."""
+
+    source_path: str
+    output_path: str
+    removed_path: str
+    source_format: str
+    target_format: str
+    report: Union[SingleExportReport, ToNativeResult]
+    dry_run: bool
+    content: Optional[str] = None
 
 

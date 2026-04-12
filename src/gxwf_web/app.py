@@ -38,14 +38,14 @@ from galaxy.tool_util.workflow_state._report_models import (
     SingleLintReport,
     SingleValidationReport,
 )
-from galaxy.tool_util.workflow_state.export_format2 import SingleExportReport
 from galaxy.tool_util.workflow_state.roundtrip import SingleRoundTripReport
-from galaxy.tool_util.workflow_state.to_native_stateful import ToNativeResult
 
 from .models import (
     CheckpointModel,
     ContentsModel,
+    ConvertResult,
     CreateRequest,
+    ExportResult,
     RenameRequest,
     WorkflowEntry,
     WorkflowIndex,
@@ -53,10 +53,10 @@ from .models import (
 from .operations import (
     get_tool_info,
     run_clean,
+    run_convert,
+    run_export,
     run_lint,
     run_roundtrip,
-    run_to_format2,
-    run_to_native,
     run_validate,
 )
 
@@ -139,7 +139,7 @@ async def refresh_workflows():
     return await list_workflows()
 
 
-@app.get("/workflows/{workflow_path:path}/validate")
+@app.post("/workflows/{workflow_path:path}/validate")
 async def validate_workflow(
     workflow_path: str,
     strict_structure: bool = False,
@@ -165,46 +165,54 @@ async def validate_workflow(
     )
 
 
-@app.get("/workflows/{workflow_path:path}/clean")
+@app.post("/workflows/{workflow_path:path}/clean")
 async def clean_workflow(
     workflow_path: str,
     preserve: List[str] = Query(default=[]),
     strip: List[str] = Query(default=[]),
-    include_content: bool = False,
+    dry_run: bool = False,
 ) -> SingleCleanReport:
-    """Report stale tool state keys in a workflow."""
+    """Clean stale tool state keys in a workflow. Writes back by default; use dry_run=true to preview."""
     wf = _get_workflow(workflow_path)
-    return run_clean(
-        wf,
-        _tool_info,
-        preserve=preserve,
-        strip=strip,
-        include_content=include_content,
-    )
+    report = run_clean(wf, _tool_info, preserve=preserve, strip=strip, dry_run=dry_run)
+    if not dry_run:
+        _maybe_refresh_workflows(workflow_path)
+    return report
 
 
-@app.get("/workflows/{workflow_path:path}/to-format2")
-async def to_format2(
+@app.post("/workflows/{workflow_path:path}/export")
+async def export_workflow(
     workflow_path: str,
-) -> SingleExportReport:
-    """Convert a native workflow to format2 with schema-aware state."""
+    dry_run: bool = False,
+) -> ExportResult:
+    """Convert a workflow to the other format, writing the result alongside the original."""
     wf = _get_workflow(workflow_path)
-    result = run_to_format2(wf, _tool_info)
-    if result is None:
-        raise HTTPException(422, "Workflow skipped (legacy encoding)")
-    return result.report
+    try:
+        result = run_export(wf, _tool_info, dry_run=dry_run)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if not dry_run:
+        _maybe_refresh_workflows(workflow_path)
+    return result
 
 
-@app.get("/workflows/{workflow_path:path}/to-native")
-async def to_native(
+@app.post("/workflows/{workflow_path:path}/convert")
+async def convert_workflow(
     workflow_path: str,
-) -> ToNativeResult:
-    """Convert a format2 workflow to native Galaxy format with schema-aware state."""
+    dry_run: bool = False,
+) -> ConvertResult:
+    """Convert a workflow to the other format, removing the original."""
     wf = _get_workflow(workflow_path)
-    return run_to_native(wf, _tool_info)
+    try:
+        result = run_convert(wf, _tool_info, dry_run=dry_run)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    if not dry_run:
+        _maybe_refresh_workflows(workflow_path)
+    return result
 
 
-@app.get("/workflows/{workflow_path:path}/roundtrip")
+@app.post("/workflows/{workflow_path:path}/roundtrip")
 async def roundtrip_workflow(
     workflow_path: str,
     strict_structure: bool = False,
@@ -345,7 +353,7 @@ async def rename_path_contents(path: str, body: RenameRequest) -> ContentsModel:
     return result
 
 
-@app.get("/workflows/{workflow_path:path}/lint")
+@app.post("/workflows/{workflow_path:path}/lint")
 async def lint_workflow(
     workflow_path: str,
     strict_structure: bool = False,

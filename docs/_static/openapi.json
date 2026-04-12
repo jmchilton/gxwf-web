@@ -45,10 +45,10 @@
       }
     },
     "/workflows/{workflow_path}/validate": {
-      "get": {
+      "post": {
         "summary": "Validate Workflow",
         "description": "Validate a workflow's tool state against tool definitions.",
-        "operationId": "validate_workflow_workflows__workflow_path__validate_get",
+        "operationId": "validate_workflow_workflows__workflow_path__validate_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -60,13 +60,23 @@
             }
           },
           {
-            "name": "strict",
+            "name": "strict_structure",
             "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
               "default": false,
-              "title": "Strict"
+              "title": "Strict Structure"
+            }
+          },
+          {
+            "name": "strict_encoding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Strict Encoding"
             }
           },
           {
@@ -87,6 +97,16 @@
               "type": "string",
               "default": "pydantic",
               "title": "Mode"
+            }
+          },
+          {
+            "name": "clean_first",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Clean First"
             }
           },
           {
@@ -141,10 +161,10 @@
       }
     },
     "/workflows/{workflow_path}/clean": {
-      "get": {
+      "post": {
         "summary": "Clean Workflow",
-        "description": "Report stale tool state keys in a workflow.",
-        "operationId": "clean_workflow_workflows__workflow_path__clean_get",
+        "description": "Clean stale tool state keys in a workflow. Writes back by default; use dry_run=true to preview.",
+        "operationId": "clean_workflow_workflows__workflow_path__clean_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -180,6 +200,16 @@
               "default": [],
               "title": "Strip"
             }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Dry Run"
+            }
           }
         ],
         "responses": {
@@ -206,11 +236,11 @@
         }
       }
     },
-    "/workflows/{workflow_path}/to-format2": {
-      "get": {
-        "summary": "To Format2",
-        "description": "Convert a native workflow to format2 with schema-aware state.",
-        "operationId": "to_format2_workflows__workflow_path__to_format2_get",
+    "/workflows/{workflow_path}/export": {
+      "post": {
+        "summary": "Export Workflow",
+        "description": "Convert a workflow to the other format, writing the result alongside the original.",
+        "operationId": "export_workflow_workflows__workflow_path__export_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -220,6 +250,16 @@
               "type": "string",
               "title": "Workflow Path"
             }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Dry Run"
+            }
           }
         ],
         "responses": {
@@ -228,7 +268,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SingleExportReport"
+                  "$ref": "#/components/schemas/ExportResult"
                 }
               }
             }
@@ -246,11 +286,11 @@
         }
       }
     },
-    "/workflows/{workflow_path}/to-native": {
-      "get": {
-        "summary": "To Native",
-        "description": "Convert a format2 workflow to native Galaxy format with schema-aware state.",
-        "operationId": "to_native_workflows__workflow_path__to_native_get",
+    "/workflows/{workflow_path}/convert": {
+      "post": {
+        "summary": "Convert Workflow",
+        "description": "Convert a workflow to the other format, removing the original.",
+        "operationId": "convert_workflow_workflows__workflow_path__convert_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -260,6 +300,16 @@
               "type": "string",
               "title": "Workflow Path"
             }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Dry Run"
+            }
           }
         ],
         "responses": {
@@ -268,7 +318,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ToNativeResult"
+                  "$ref": "#/components/schemas/ConvertResult"
                 }
               }
             }
@@ -287,10 +337,10 @@
       }
     },
     "/workflows/{workflow_path}/roundtrip": {
-      "get": {
+      "post": {
         "summary": "Roundtrip Workflow",
         "description": "Run round-trip validation (native -> format2 -> native).",
-        "operationId": "roundtrip_workflow_workflows__workflow_path__roundtrip_get",
+        "operationId": "roundtrip_workflow_workflows__workflow_path__roundtrip_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -299,6 +349,46 @@
             "schema": {
               "type": "string",
               "title": "Workflow Path"
+            }
+          },
+          {
+            "name": "strict_structure",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Strict Structure"
+            }
+          },
+          {
+            "name": "strict_encoding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Strict Encoding"
+            }
+          },
+          {
+            "name": "strict_state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Strict State"
+            }
+          },
+          {
+            "name": "include_content",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Content"
             }
           }
         ],
@@ -842,10 +932,10 @@
       }
     },
     "/workflows/{workflow_path}/lint": {
-      "get": {
+      "post": {
         "summary": "Lint Workflow",
         "description": "Lint a workflow (structural + tool state validation).",
-        "operationId": "lint_workflow_workflows__workflow_path__lint_get",
+        "operationId": "lint_workflow_workflows__workflow_path__lint_post",
         "parameters": [
           {
             "name": "workflow_path",
@@ -857,13 +947,23 @@
             }
           },
           {
-            "name": "strict",
+            "name": "strict_structure",
             "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
               "default": false,
-              "title": "Strict"
+              "title": "Strict Structure"
+            }
+          },
+          {
+            "name": "strict_encoding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Strict Encoding"
             }
           },
           {
@@ -988,12 +1088,20 @@
             ],
             "title": "Version"
           },
-          "removed_keys": {
+          "removed_state_keys": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Removed Keys",
+            "title": "Removed State Keys",
+            "default": []
+          },
+          "removed_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Removed Step Keys",
             "default": []
           },
           "skipped": {
@@ -1388,6 +1496,68 @@
         "title": "ContentsModel",
         "description": "Jupyter Contents API-shaped model for files and directories."
       },
+      "ConvertResult": {
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "title": "Source Path"
+          },
+          "output_path": {
+            "type": "string",
+            "title": "Output Path"
+          },
+          "removed_path": {
+            "type": "string",
+            "title": "Removed Path"
+          },
+          "source_format": {
+            "type": "string",
+            "title": "Source Format"
+          },
+          "target_format": {
+            "type": "string",
+            "title": "Target Format"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SingleExportReport"
+              },
+              {
+                "$ref": "#/components/schemas/ToNativeResult"
+              }
+            ],
+            "title": "Report"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_path",
+          "output_path",
+          "removed_path",
+          "source_format",
+          "target_format",
+          "report",
+          "dry_run"
+        ],
+        "title": "ConvertResult",
+        "description": "Result of a convert operation (export + remove original)."
+      },
       "CreateRequest": {
         "properties": {
           "type": {
@@ -1437,6 +1607,63 @@
           "step_missing"
         ],
         "title": "DiffType"
+      },
+      "ExportResult": {
+        "properties": {
+          "source_path": {
+            "type": "string",
+            "title": "Source Path"
+          },
+          "output_path": {
+            "type": "string",
+            "title": "Output Path"
+          },
+          "source_format": {
+            "type": "string",
+            "title": "Source Format"
+          },
+          "target_format": {
+            "type": "string",
+            "title": "Target Format"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SingleExportReport"
+              },
+              {
+                "$ref": "#/components/schemas/ToNativeResult"
+              }
+            ],
+            "title": "Report"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_path",
+          "output_path",
+          "source_format",
+          "target_format",
+          "report",
+          "dry_run"
+        ],
+        "title": "ExportResult",
+        "description": "Result of an export (format conversion) operation."
       },
       "FailureClass": {
         "type": "string",
@@ -1692,6 +1919,28 @@
             "type": "array",
             "title": "Results"
           },
+          "before_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Content"
+          },
+          "after_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Content"
+          },
           "total_removed": {
             "type": "integer",
             "title": "Total Removed",
@@ -1814,6 +2063,28 @@
           },
           "result": {
             "$ref": "#/components/schemas/RoundTripValidationResult"
+          },
+          "before_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Content"
+          },
+          "after_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Content"
           }
         },
         "type": "object",
@@ -1871,6 +2142,16 @@
             },
             "type": "array",
             "title": "Encoding Errors"
+          },
+          "clean_report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SingleCleanReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "summary": {
             "additionalProperties": {
@@ -2079,7 +2360,7 @@
           },
           "diffs": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/StepDiff"
             },
             "type": "array",
             "title": "Diffs"
