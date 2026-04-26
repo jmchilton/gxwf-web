@@ -2,11 +2,13 @@
 
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import (
     List,
     Optional,
+    Sequence,
 )
 
 from fastapi import (
@@ -16,6 +18,11 @@ from fastapi import (
     Query,
 )
 from fastapi.responses import FileResponse
+
+from .csp import (
+    build_csp_header,
+    build_monaco_csp_header,
+)
 from galaxy.tool_util.workflow_state.workflow_tree import (
     discover_workflows,
     WorkflowInfo,
@@ -64,6 +71,7 @@ _tool_info = None
 _directory: Optional[str] = None
 _workflows: Optional[List[WorkflowInfo]] = None
 _ui_dir: Optional[Path] = None
+_extra_connect_src: List[str] = []
 
 
 def configure(directory: str):
@@ -85,6 +93,12 @@ def configure_ui(ui_dir: str):
     _ui_dir = p
 
 
+def configure_extra_connect_src(origins: Sequence[str]) -> None:
+    """Append per-deployment origins to the CSP connect-src directive."""
+    global _extra_connect_src
+    _extra_connect_src = list(origins)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _tool_info, _workflows
@@ -103,6 +117,22 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+def _parse_conditional_date(value: str) -> Optional[datetime]:
+    """Parse If-Unmodified-Since accepting both RFC 7231 HTTP-date and ISO-8601.
+
+    The UI round-trips ``last_modified`` (Pydantic's ISO-8601 datetime) directly
+    back as the conditional header, so we need to accept both forms.
+    """
+    try:
+        return parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        pass
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _get_workflow(workflow_path: str) -> WorkflowInfo:
@@ -326,10 +356,12 @@ async def write_path_contents(
     assert _directory is not None
     expected_mtime = None
     if if_unmodified_since is not None:
-        try:
-            expected_mtime = parsedate_to_datetime(if_unmodified_since)
-        except (TypeError, ValueError) as e:
-            raise HTTPException(400, f"Invalid If-Unmodified-Since header: {e}")
+        expected_mtime = _parse_conditional_date(if_unmodified_since)
+        if expected_mtime is None:
+            raise HTTPException(
+                400,
+                f'Invalid If-Unmodified-Since header: Invalid date value or format "{if_unmodified_since}"',
+            )
     result = write_contents(_directory, path, model, expected_mtime=expected_mtime)
     _maybe_refresh_workflows(path)
     return result
@@ -373,12 +405,24 @@ async def lint_workflow(
     )
 
 
+def _csp_for(path: str) -> str:
+    """CSP policy to attach to a static response for ``path``.
+
+    /monaco/* ships the extension-host iframe and its workers; they need
+    a more permissive CSP than the Vue shell to boot.
+    """
+    if path.startswith("monaco/") or path.startswith("/monaco/"):
+        return build_monaco_csp_header(_extra_connect_src)
+    return build_csp_header(_extra_connect_src)
+
+
 @app.get("/{full_path:path}", include_in_schema=False)
 async def serve_spa(full_path: str):
     """Serve static assets or fall back to SPA index.html."""
     if _ui_dir is None:
         raise HTTPException(404, "Not found")
     candidate = _ui_dir / full_path
+    headers = {"Content-Security-Policy": _csp_for(full_path)}
     if candidate.is_file():
-        return FileResponse(candidate)
-    return FileResponse(_ui_dir / "index.html")
+        return FileResponse(candidate, headers=headers)
+    return FileResponse(_ui_dir / "index.html", headers=headers)

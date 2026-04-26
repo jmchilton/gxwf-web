@@ -5,8 +5,12 @@ TEST_DIR?=tests
 DOCS_DIR?=docs
 
 GXWF_TEST_WORKFLOW_DIRECTORY?=.
+GXWF_TS_WORKTREE?=/Users/jxc755/projects/worktrees/galaxy-tool-util/branch/styling
+GXWF_UI_DIST?=$(GXWF_TS_WORKTREE)/packages/gxwf-ui/dist
+GXWF_HOST?=127.0.0.1
+GXWF_PORT?=8000
 
-.PHONY: clean-pyc clean-build docs clean serve
+.PHONY: clean-pyc clean-build docs clean serve build-ui build-ui-monaco serve-vscode e2e e2e-monaco
 
 help: ## show this help
 	@egrep '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -32,6 +36,21 @@ clean-test: ## remove test and coverage artifacts
 
 serve: ## start gxwf-web server (respects GXWF_UI_DIST and GXWF_TEST_WORKFLOW_DIRECTORY)
 	uv run gxwf-web $(GXWF_TEST_WORKFLOW_DIRECTORY)
+
+build-ui: ## build the Monaco-free gxwf-ui dist in the TS worktree ($(GXWF_TS_WORKTREE))
+	cd $(GXWF_TS_WORKTREE) && pnpm --filter @galaxy-tool-util/gxwf-ui build
+
+build-ui-monaco: ## build gxwf-ui with Monaco + LSP enabled (VITE_GXWF_MONACO=1); also exposes window.__gxwfMonaco for E2E
+	cd $(GXWF_TS_WORKTREE) && VITE_GXWF_MONACO=1 VITE_GXWF_EXPOSE_MONACO=1 pnpm --filter @galaxy-tool-util/gxwf-ui build
+
+serve-vscode: build-ui-monaco ## build Monaco UI and serve it from the Python gxwf-web (VS Code mode)
+	uv run gxwf-web --ui-dir $(GXWF_UI_DIST) --host $(GXWF_HOST) --port $(GXWF_PORT) $(GXWF_TEST_WORKFLOW_DIRECTORY)
+
+e2e: build-ui ## run the TS Playwright suite against the Python gxwf-web server
+	scripts/run-e2e.sh
+
+e2e-monaco: build-ui-monaco ## run the TS Playwright suite (Monaco specs) against the Python gxwf-web server
+	GXWF_E2E_MONACO=1 scripts/run-e2e.sh
 
 setup-venv: ## setup a development virtualenv in current directory
 	if command -v uv > /dev/null 2>&1; then \
